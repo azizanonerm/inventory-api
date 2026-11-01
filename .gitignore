@@ -3,3 +3,8 @@ dist/
 .env
 *.log
 coverage/
+src/generated/
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
