@@ -3,9 +3,22 @@ import { prisma } from "../lib/prisma.js";
 
 const router = Router();
 
-// GET /products
-router.get("/", async (_req, res) => {
+// GET /products  (opsional: /products?categoryId=1)
+router.get("/", async (req, res) => {
+  let categoryId: number | undefined;
+
+  if (req.query.categoryId !== undefined) {
+    categoryId = Number(req.query.categoryId);
+
+    if (Number.isNaN(categoryId)) {
+      res.status(400).json({ message: "categoryId harus berupa angka" });
+      return;
+    }
+  }
+
   const products = await prisma.product.findMany({
+    where: { categoryId },
+    include: { category: true },
     orderBy: { id: "asc" },
   });
 
@@ -21,7 +34,10 @@ router.get("/:id", async (req, res) => {
     return;
   }
 
-  const product = await prisma.product.findUnique({ where: { id } });
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: { category: true },
+  });
 
   if (!product) {
     res.status(404).json({ message: "Produk tidak ditemukan" });
@@ -33,7 +49,7 @@ router.get("/:id", async (req, res) => {
 
 // POST /products
 router.post("/", async (req, res) => {
-  const { name, sku, stock, price } = req.body ?? {};
+  const { name, sku, stock, price, categoryId } = req.body ?? {};
 
   if (!name || !sku) {
     res.status(400).json({ message: "name dan sku wajib diisi" });
@@ -47,13 +63,26 @@ router.post("/", async (req, res) => {
     return;
   }
 
+  if (categoryId !== undefined && categoryId !== null) {
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      res.status(400).json({ message: "Kategori tidak ditemukan" });
+      return;
+    }
+  }
+
   const product = await prisma.product.create({
     data: {
       name,
       sku,
       stock: stock ?? 0,
       price: price ?? 0,
+      categoryId,
     },
+    include: { category: true },
   });
 
   res.status(201).json(product);
@@ -75,11 +104,23 @@ router.patch("/:id", async (req, res) => {
     return;
   }
 
-  const { name, sku, stock, price } = req.body ?? {};
+  const { name, sku, stock, price, categoryId } = req.body ?? {};
+
+  if (categoryId !== undefined && categoryId !== null) {
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      res.status(400).json({ message: "Kategori tidak ditemukan" });
+      return;
+    }
+  }
 
   const product = await prisma.product.update({
     where: { id },
-    data: { name, sku, stock, price },
+    data: { name, sku, stock, price, categoryId },
+    include: { category: true },
   });
 
   res.json(product);
