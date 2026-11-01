@@ -16,6 +16,8 @@ let products: Product[] = [
   { id: 3, name: "Bubble Wrap 1m", sku: "BW-1M-001", stock: 8, price: 15000 },
 ];
 
+let nextId = 4;
+
 app.use(express.json());
 
 app.get("/", (_req, res) => {
@@ -45,6 +47,29 @@ app.get("/products/:id", (req, res) => {
   }
 
   res.json(product);
+});
+
+
+app.post("/products", (req, res) => {
+    const { name, sku, stock, price } = req.body ?? {};
+
+  if (!name || !sku) {
+    res.status(400).json({ message: "name dan sku wajib diisi" });
+    return;
+  }
+
+  const newProduct: Product = {
+    id: nextId,
+    name: name,
+    sku: sku,
+    stock: stock ?? 0,
+    price: price ?? 0,
+  };
+
+  nextId = nextId + 1;
+  products.push(newProduct);
+
+  res.status(201).json(newProduct);
 });
 
 export default app;
