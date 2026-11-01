@@ -1,25 +1,27 @@
 import { Router } from "express";
-import type { Product } from "../types/product.js";
+import { prisma } from "../lib/prisma.js";
 
 const router = Router();
 
-const products: Product[] = [
-  { id: 1, name: "Kardus Besar", sku: "BOX-L-001", stock: 120, price: 8500 },
-  { id: 2, name: "Lakban Coklat", sku: "TAPE-BR-001", stock: 45, price: 12000 },
-  { id: 3, name: "Bubble Wrap 1m", sku: "BW-1M-001", stock: 8, price: 15000 },
-];
-
-let nextId = 4;
-
 // GET /products
-router.get("/", (_req, res) => {
+router.get("/", async (_req, res) => {
+  const products = await prisma.product.findMany({
+    orderBy: { id: "asc" },
+  });
+
   res.json(products);
 });
 
 // GET /products/:id
-router.get("/:id", (req, res) => {
+router.get("/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const product = products.find((p) => p.id === id);
+
+  if (Number.isNaN(id)) {
+    res.status(400).json({ message: "ID harus berupa angka" });
+    return;
+  }
+
+  const product = await prisma.product.findUnique({ where: { id } });
 
   if (!product) {
     res.status(404).json({ message: "Produk tidak ditemukan" });
@@ -30,7 +32,7 @@ router.get("/:id", (req, res) => {
 });
 
 // POST /products
-router.post("/", (req, res) => {
+router.post("/", async (req, res) => {
   const { name, sku, stock, price } = req.body ?? {};
 
   if (!name || !sku) {
@@ -38,51 +40,68 @@ router.post("/", (req, res) => {
     return;
   }
 
-  const newProduct: Product = {
-    id: nextId,
-    name: name,
-    sku: sku,
-    stock: stock ?? 0,
-    price: price ?? 0,
-  };
+  const existing = await prisma.product.findUnique({ where: { sku } });
 
-  nextId = nextId + 1;
-  products.push(newProduct);
+  if (existing) {
+    res.status(409).json({ message: "SKU sudah dipakai produk lain" });
+    return;
+  }
 
-  res.status(201).json(newProduct);
+  const product = await prisma.product.create({
+    data: {
+      name,
+      sku,
+      stock: stock ?? 0,
+      price: price ?? 0,
+    },
+  });
+
+  res.status(201).json(product);
 });
 
 // PATCH /products/:id
-router.patch("/:id", (req, res) => {
+router.patch("/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const product = products.find((p) => p.id === id);
 
-  if (!product) {
+  if (Number.isNaN(id)) {
+    res.status(400).json({ message: "ID harus berupa angka" });
+    return;
+  }
+
+  const existing = await prisma.product.findUnique({ where: { id } });
+
+  if (!existing) {
     res.status(404).json({ message: "Produk tidak ditemukan" });
     return;
   }
 
   const { name, sku, stock, price } = req.body ?? {};
 
-  product.name = name ?? product.name;
-  product.sku = sku ?? product.sku;
-  product.stock = stock ?? product.stock;
-  product.price = price ?? product.price;
+  const product = await prisma.product.update({
+    where: { id },
+    data: { name, sku, stock, price },
+  });
 
   res.json(product);
 });
 
 // DELETE /products/:id
-router.delete("/:id", (req, res) => {
+router.delete("/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const index = products.findIndex((p) => p.id === id);
 
-  if (index === -1) {
+  if (Number.isNaN(id)) {
+    res.status(400).json({ message: "ID harus berupa angka" });
+    return;
+  }
+
+  const existing = await prisma.product.findUnique({ where: { id } });
+
+  if (!existing) {
     res.status(404).json({ message: "Produk tidak ditemukan" });
     return;
   }
 
-  products.splice(index, 1);
+  await prisma.product.delete({ where: { id } });
 
   res.status(204).send();
 });
