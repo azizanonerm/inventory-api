@@ -1,6 +1,6 @@
 import express from "express";
-import productRoutes from "./routes/product.routes";
-
+import productRoutes from "./routes/product.routes.js";
+import categoryRoutes from "./routes/category.routes.js";
 const app = express();
 
 app.use(express.json());
@@ -19,5 +19,6 @@ app.get("/health", (_req, res) => {
 });
 
 app.use("/products", productRoutes);
+app.use("/categories", categoryRoutes);
 
 export default app;
