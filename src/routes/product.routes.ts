@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import { productCreateSchema, productUpdateSchema } from "../validation/schemas.js";
+import { validateBody } from "../utils/validate-body.js";
 
 const router = Router();
 
@@ -49,12 +51,7 @@ router.get("/:id", async (req, res) => {
 
 // POST /products
 router.post("/", async (req, res) => {
-  const { name, sku, stock, price, categoryId } = req.body ?? {};
-
-  if (!name || !sku) {
-    res.status(400).json({ message: "name dan sku wajib diisi" });
-    return;
-  }
+  const { name, sku, stock, price, categoryId } = validateBody(productCreateSchema, req.body ?? {});
 
   const existing = await prisma.product.findUnique({ where: { sku } });
 
@@ -104,7 +101,8 @@ router.patch("/:id", async (req, res) => {
     return;
   }
 
-  const { name, sku, stock, price, categoryId } = req.body ?? {};
+  const data = validateBody(productUpdateSchema, req.body ?? {});
+  const { categoryId } = data;
 
   if (categoryId !== undefined && categoryId !== null) {
     const category = await prisma.category.findUnique({
@@ -119,7 +117,7 @@ router.patch("/:id", async (req, res) => {
 
   const product = await prisma.product.update({
     where: { id },
-    data: { name, sku, stock, price, categoryId },
+    data,
     include: { category: true },
   });
 

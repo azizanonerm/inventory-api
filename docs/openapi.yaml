@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  title: Inventory API
+  version: 1.0.0
+  description: REST API untuk manajemen inventaris gudang.
+servers:
+  - url: http://localhost:3000
+paths:
+  /health:
+    get:
+      summary: Cek status API
+      responses:
+        '200':
+          description: API aktif
+  /products:
+    get:
+      summary: Daftar produk
+      parameters:
+        - in: query
+          name: categoryId
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Daftar produk }
+    post:
+      summary: Membuat produk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductInput' }
+      responses:
+        '201': { description: Produk berhasil dibuat }
+        '400': { description: Request tidak valid }
+        '409': { description: SKU sudah digunakan }
+  /categories:
+    get:
+      summary: Daftar kategori
+      responses:
+        '200': { description: Daftar kategori }
+    post:
+      summary: Membuat kategori
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, example: Elektronik }
+      responses:
+        '201': { description: Kategori berhasil dibuat }
+        '400': { description: Request tidak valid }
+  /stock-movements:
+    get:
+      summary: Riwayat pergerakan stok
+      parameters:
+        - in: query
+          name: productId
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200': { description: Riwayat stok }
+    post:
+      summary: Mencatat stok masuk atau keluar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StockMovementInput' }
+      responses:
+        '201': { description: Pergerakan stok berhasil dicatat }
+        '400': { description: Request tidak valid atau stok tidak cukup }
+        '404': { description: Produk tidak ditemukan }
+components:
+  schemas:
+    ProductInput:
+      type: object
+      required: [name, sku]
+      properties:
+        name: { type: string, example: Keyboard Mechanical }
+        sku: { type: string, example: KB-001 }
+        stock: { type: integer, minimum: 0, example: 10 }
+        price: { type: integer, minimum: 0, example: 750000 }
+        categoryId: { type: integer, minimum: 1, nullable: true }
+    StockMovementInput:
+      type: object
+      required: [productId, type, quantity]
+      properties:
+        productId: { type: integer, minimum: 1, example: 1 }
+        type: { type: string, enum: [IN, OUT] }
+        quantity: { type: integer, minimum: 1, example: 2 }
+        note: { type: string, example: Penjualan }
