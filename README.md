@@ -129,3 +129,9 @@ prisma/
 ## Catatan desain
 
 Perubahan stok dilakukan melalui endpoint `/stock-movements`, bukan dengan mengubah stok secara langsung, sehingga setiap perubahan dapat dilacak.
+
+## Screenshot
+
+### Docker dan API Berjalan
+
+![Docker dan API berjalan](docs/images/docker-running.png)
