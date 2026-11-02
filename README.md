@@ -135,10 +135,3 @@ Perubahan stok dilakukan melalui endpoint `/stock-movements`, bukan dengan mengu
 ### Docker dan API Berjalan
 
 ![Docker dan API berjalan](docs/images/docker-running.png)
-
-## Demo Lokal
-
-Jalankan aplikasi dengan Docker:
-
-```bash
-docker compose up --build
